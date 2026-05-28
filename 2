@@ -361,4 +361,68 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         destroy()
 
+% READ, ANALYSE AND UPLOAD TEMPERATURE & HUMIDITY
+% DATA FROM THINGSPEAK USING MATLAB
 
+clc;
+clear;
+
+% ThingSpeak Details
+channelID = 3396429;
+
+readAPI = 'MVLUO2X7RBYGUQ39';
+
+writeAPI = 'CVBM5XKO315237OD';
+
+% ---------------------------------
+% READ DATA FROM THINGSPEAK
+% ---------------------------------
+
+% Read Temperature from Field 1
+temperature = thingSpeakRead(channelID, 'Fields', 1, 'NumPoints', 10, 'ReadKey', readAPI);
+
+% Read Humidity from Field 2
+humidity = thingSpeakRead(channelID, 'Fields', 2, 'NumPoints', 10, 'ReadKey', readAPI);
+
+% ---------------------------------
+% DISPLAY DATA
+% ---------------------------------
+
+disp('Temperature Data')
+disp(temperature)
+
+disp('Humidity Data')
+disp(humidity)
+
+% ---------------------------------
+% ANALYSE DATA
+% ---------------------------------
+
+avgTemp = mean(temperature);
+maxTemp = max(temperature);
+minTemp = min(temperature);
+
+avgHum = mean(humidity);
+maxHum = max(humidity);
+minHum = min(humidity);
+
+fprintf('\n--- Temperature Analysis ---\n');
+fprintf('Average Temperature = %.2f\n', avgTemp);
+fprintf('Maximum Temperature = %.2f\n', maxTemp);
+fprintf('Minimum Temperature = %.2f\n', minTemp);
+
+fprintf('\n--- Humidity Analysis ---\n');
+fprintf('Average Humidity = %.2f\n', avgHum);
+fprintf('Maximum Humidity = %.2f\n', maxHum);
+fprintf('Minimum Humidity = %.2f\n', minHum);
+
+% ---------------------------------
+% UPLOAD NEW DATA TO THINGSPEAK
+% ---------------------------------
+
+newTemp = 30;
+newHumidity = 65;
+
+thingSpeakWrite(channelID, [newTemp newHumidity], 'Fields', [1 2], 'WriteKey', writeAPI);
+
+disp('New Temperature & Humidity Data Uploaded Successfully')
