@@ -1,0 +1,364 @@
+```python
+# 1. Interface Servo Motor with Single Cycle
+
+import RPi.GPIO as g
+import time
+
+g.setmode(g.BOARD)
+g.setwarnings(False)
+
+g.setup(11, g.OUT)   # Connect to P15 on Raspberry Pi
+
+servo = g.PWM(11, 50)
+servo.start(5)
+
+print("wait")
+time.sleep(1)
+
+duty = 2
+
+while duty <= 17:
+    servo.ChangeDutyCycle(duty)
+    time.sleep(5)
+    duty = duty + 2
+
+print("turning back to 0 degrees")
+
+servo.ChangeDutyCycle(2)
+time.sleep(5)
+
+servo.ChangeDutyCycle(0)
+servo.stop()
+
+g.cleanup()
+
+print("cleared")
+```
+
+Output:
+
+```text
+Servo motor turns 180 degrees
+```
+
+---
+
+```python
+# 2. Interface Servo Motor with Multiple Cycle
+
+import RPi.GPIO as g
+import time
+
+g.setmode(g.BOARD)
+g.setwarnings(False)
+
+g.setup(11, g.OUT)   # Connect to P15 on Raspberry Pi
+
+servo = g.PWM(11, 50)
+servo.start(0)
+
+def set_angle(angle):
+    duty = 2 + (angle / 18)
+    servo.ChangeDutyCycle(duty)
+    time.sleep(0.5)
+    servo.ChangeDutyCycle(0)
+
+try:
+    cycles = 3
+
+    for i in range(cycles):
+        print(f"Cycle {i+1}")
+
+        for angle in range(0, 181, 30):
+            print(f"Moving to {angle} degrees")
+            set_angle(angle)
+
+        for angle in range(180, -1, -30):
+            print(f"Moving to {angle} degrees")
+            set_angle(angle)
+
+    print("Completed all cycles")
+
+except KeyboardInterrupt:
+    print("Process interrupted")
+
+finally:
+    servo.stop()
+    g.cleanup()
+    print("GPIO cleaned up and program exited")
+```
+
+Output:
+
+```text
+Servo motor moves in steps of 30 degrees
+```
+
+---
+
+```python
+# 3. Interface Servo Motor with Angle as User Input
+
+import RPi.GPIO as g
+from time import sleep
+
+g.setmode(g.BOARD)
+g.setwarnings(False)
+
+control_pin = 11   # Connect to P15 on Raspberry Pi
+
+g.setup(control_pin, g.OUT)
+
+pwm = g.PWM(control_pin, 50)
+
+set_angle = int(input("Enter servo motor rotation angle: "))
+
+pwm.start(0)
+
+delay = 1
+
+duty_cycle = (set_angle / 18) + 2.5
+
+g.output(control_pin, True)
+
+pwm.ChangeDutyCycle(duty_cycle)
+
+sleep(delay)
+
+g.output(control_pin, False)
+
+pwm.ChangeDutyCycle(0)
+
+pwm.stop()
+
+g.cleanup()
+```
+
+Output:
+
+```text
+Enter servo motor rotation angle: 75
+```
+
+---
+
+```python
+# 4. ThingSpeak Read & Write
+
+# Copy URL and paste in browser by changing field values
+
+# Example Write URL:
+# https://api.thingspeak.com/update?api_key=YOUR_API_KEY&field1=25
+
+# Example Read URL:
+# https://api.thingspeak.com/channels/CHANNEL_ID/fields/1.json?api_key=READ_API_KEY&results=2
+```
+
+---
+
+```matlab
+% 5. MATLAB ThingSpeak Read & Write
+
+% To read only previous step elements
+thingSpeakRead(channel_id, Fields=[column_numbers], ReadKey="......")
+
+% To write values
+thingSpeakWrite(channel_id, [column_values], Fields=[column_numbers], WriteKey="......")
+
+% To retrieve values of one particular column
+variable = thingSpeakRead(channel_id, Fields=column_number, NumMinutes=40, ReadKey="......")
+
+mean(variable)
+max(variable)
+```
+
+---
+
+```python
+# 6. DHT Sensor Through ThingSpeak
+
+import Adafruit_DHT
+import RPi.GPIO as g
+import time
+from urllib.request import urlopen
+
+g.setmode(g.BOARD)
+g.setwarnings(False)
+
+write_api = ".................."   # Replace with ThingSpeak API key
+
+base_url = "https://api.thingspeak.com/update?api_key={}".format(write_api)
+
+sensor = Adafruit_DHT.DHT11
+
+pin = 17   # Connect to P15 on Raspberry Pi
+
+print("Temperature & Humidity monitoring in progress")
+
+try:
+    while True:
+        humidity, temp = Adafruit_DHT.read_retry(sensor, pin)
+
+        print("Humidity =", str(humidity))
+        print("Temperature =", str(temp))
+
+        thingSpeakHTTP = base_url + "&field1={:.2f}&field2={:.2f}".format(humidity, temp)
+
+        print(thingSpeakHTTP)
+
+        conn = urlopen(thingSpeakHTTP)
+
+        time.sleep(3)
+
+except KeyboardInterrupt:
+    g.cleanup()
+```
+
+Output:
+
+```text
+Humidity and temperature values are visible in the terminal
+```
+
+---
+
+```python
+# 7. Rain Sensor (Method 1)
+
+import RPi.GPIO as g
+import time
+
+sensor = 37   # On board connect to P14
+
+def setup():
+    g.setmode(g.BOARD)
+    g.setup(sensor, g.IN)
+
+def loop():
+    try:
+        while True:
+            if g.input(sensor) == 1:
+                print("Rain detected")
+            else:
+                print("No rain")
+
+            time.sleep(2)
+
+    except KeyboardInterrupt:
+        g.cleanup()
+
+if __name__ == "__main__":
+    setup()
+    loop()
+```
+
+---
+
+```python
+# 7. Rain Sensor (Method 2)
+
+import time
+import RPi.GPIO as g
+
+sensor = 37   # On board connect to P14
+
+g.setmode(g.BOARD)
+g.setup(sensor, g.IN)
+g.setwarnings(False)
+
+def call_back(sensor):
+    if g.input(sensor):
+        print("Raining")
+    else:
+        print("No rain")
+
+g.add_event_detect(sensor, g.BOTH, bouncetime=300)
+g.add_event_callback(sensor, call_back)
+
+while True:
+    time.sleep(2)
+```
+
+Output:
+
+```text
+Raining
+```
+
+---
+
+```python
+# 8. Moisture Detection
+
+import RPi.GPIO as g
+import time
+
+channel = 10
+
+g.setmode(g.BOARD)
+
+g.setup(channel, g.IN)
+
+try:
+    while True:
+        if g.input(channel) == 0:
+            print("Moisture detected")
+        else:
+            print("Moisture not detected")
+
+        time.sleep(2)
+
+except KeyboardInterrupt:
+    g.cleanup()
+```
+
+---
+
+# 9. LDR Sensor with Relay Switch
+
+import RPi.GPIO as GPIO
+import time
+
+light = 11                 # Board pin number for LDR
+relay = [32, 36, 38, 40]  # Relay pins
+led = 13                   # LED pin
+
+def setup():
+    GPIO.setmode(GPIO.BOARD)
+
+    GPIO.setup(light, GPIO.IN)
+
+    GPIO.setup(relay, GPIO.OUT)
+
+    GPIO.setup(led, GPIO.OUT)
+
+def read_light():
+    while True:
+        light_state = GPIO.input(light)
+
+        if light_state == 0:
+            print("Light Detected")
+
+            GPIO.output(relay, 0)
+            GPIO.output(led, 0)
+
+        elif light_state == 1:
+            print("Light Not Detected")
+
+            GPIO.output(relay, 1)
+            GPIO.output(led, 1)
+
+        time.sleep(0.3)
+
+def destroy():
+    GPIO.cleanup()
+
+if __name__ == '__main__':
+    try:
+        setup()
+        read_light()
+
+    except KeyboardInterrupt:
+        destroy()
+
+
